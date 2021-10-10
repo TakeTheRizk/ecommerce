@@ -1,5 +1,13 @@
 package mpayment
 
+import (
+	"context"
+	"log"
+
+	"github.com/ecommerce/core/order"
+	"github.com/ecommerce/core/cart"
+)
+
 type DoPaymentResponse struct {
 	UserID     	int64       `json:"user_id"`
 	OrderID    	int64 		`json:"order_id"`
@@ -25,7 +33,15 @@ func DoPayment(ctx context.Context, userID, totalPrice int64) (resp DoPaymentRes
 	}
 	defer tx.Rollback()
 
-	orderID, err := order.CreateNewOrder(userID, totalPrice)
+	orderData = order.OrderData{
+		UserID: userID,
+		TotalPrice: totalPrice,
+		StatusPayment: order.PaymentStatusOnProcess,
+		CreateTime: util.GetTimeNow(),
+		CreateBy: cons.SystemDefault,
+	}
+
+	orderID, err := orderData.CreateNewOrder(ctx, tx)
 	if err != nil {
 		return resp, errors.AddTrace(err)
 	}
